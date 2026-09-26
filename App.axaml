@@ -1,0 +1,28 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Soundboard.App"
+             RequestedThemeVariant="Default">
+
+    <!-- Icône + menu de la zone de notification Windows. Clic gauche (Clicked)
+         rouvre la fenêtre ; clic droit affiche le NativeMenu ci-dessous. -->
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon Icon="/Assets/Soundboard.ico"
+                      ToolTipText="Soundboard"
+                      Clicked="OnTrayIconClicked">
+                <TrayIcon.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="Configuration" Click="OnTrayConfigurationClicked" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="Quitter" Click="OnTrayQuitClicked" />
+                    </NativeMenu>
+                </TrayIcon.Menu>
+            </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+
+</Application>

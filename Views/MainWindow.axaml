@@ -1,0 +1,273 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:audio="using:Soundboard.Audio"
+        xmlns:models="using:Soundboard.Models"
+        x:Class="Soundboard.Views.MainWindow"
+        Title="Soundboard"
+        Icon="/Assets/Soundboard.ico"
+        Width="640" Height="680"
+        Background="#12141C">
+
+    <Window.Styles>
+        <!-- Libellé de section type "NOM DE LA PAGE" -->
+        <Style Selector="TextBlock.section-label">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#7B8194" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+
+        <!-- Carte/panneau -->
+        <Style Selector="Border.panel">
+            <Setter Property="Background" Value="#1A1D28" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+
+        <!-- ComboBox sortie audio -->
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="#232635" />
+            <Setter Property="BorderBrush" Value="#2E3244" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Foreground" Value="#F2F3F7" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+
+        <!-- CheckBox (sélection multiple, "tout sélectionner"...) -->
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="#E4E6ED" />
+        </Style>
+
+        <!-- Bouton plein bleu (ex. Ajouter un son) -->
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#5B8DEF" />
+            <Setter Property="Foreground" Value="#0F1117" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#6E9BF2" />
+        </Style>
+
+        <!-- Bouton contour (ex. Supprimer) -->
+        <Style Selector="Button.secondary">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#E4557B" />
+            <Setter Property="BorderBrush" Value="#3A2A33" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="14,8" />
+        </Style>
+        <Style Selector="Button.secondary:disabled">
+            <Setter Property="Opacity" Value="0.4" />
+        </Style>
+
+        <!-- Bouton lecture (▶) par ligne : carré, bien séparé du slider par
+             une Grid dédiée (voir DataTemplate) pour éviter tout chevauchement
+             avec le nom du son. -->
+        <Style Selector="Button.play">
+            <Setter Property="Background" Value="#5B8DEF" />
+            <Setter Property="Foreground" Value="#0F1117" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.play:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#7EA9F5" />
+        </Style>
+
+        <!-- État "en cours de lecture" du bouton ▶ : devient ⏹ pour arrêter ce son -->
+        <Style Selector="Button.play.playing">
+            <Setter Property="Background" Value="#E4557B" />
+            <Setter Property="Foreground" Value="#0F1117" />
+        </Style>
+        <Style Selector="Button.play.playing:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#EF7996" />
+        </Style>
+
+        <!-- Bouton renommer (✎) par ligne, discret -->
+        <Style Selector="Button.rename">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#7B8194" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.rename:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#20242F" />
+        </Style>
+
+        <!-- Bouton bascule Activer/Désactiver (sortie de test) -->
+        <Style Selector="ToggleButton.output-toggle">
+            <Setter Property="Background" Value="#232635" />
+            <Setter Property="Foreground" Value="#7B8194" />
+            <Setter Property="BorderBrush" Value="#2E3244" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="MinWidth" Value="56" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="ToggleButton.output-toggle:checked">
+            <Setter Property="Background" Value="#2E7D5B" />
+            <Setter Property="Foreground" Value="#EAFBF2" />
+        </Style>
+
+        <!-- Liste des sons -->
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Margin" Value="0,2" />
+        </Style>
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#20242F" />
+        </Style>
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#233052" />
+        </Style>
+    </Window.Styles>
+
+    <DockPanel Margin="20">
+
+        <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,20">
+            <TextBlock Text="Soundboard" FontSize="22" FontWeight="Bold" Foreground="#F2F3F7" />
+            <TextBlock Text="Réalisée par le goat."
+                       Foreground="#7B8194" FontSize="12" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Spacing="16">
+
+            <!-- Zone 1 : sorties audio, principale et de test, côte à côte -->
+            <Border Classes="panel">
+                <Grid ColumnDefinitions="*,*">
+                    <StackPanel Grid.Column="0" Spacing="8" Margin="0,0,8,0">
+                        <TextBlock Text="SORTIE AUDIO" Classes="section-label" />
+                        <Grid ColumnDefinitions="Auto,*">
+                            <ToggleButton Grid.Column="0"
+                                          Name="PrimaryOutputToggle"
+                                          Classes="output-toggle"
+                                          Content="On"
+                                          IsChecked="True"
+                                          Margin="0,0,8,0" />
+                            <ComboBox Grid.Column="1"
+                                      Name="DeviceComboBox"
+                                      x:DataType="audio:AudioDeviceInfo"
+                                      DisplayMemberBinding="{Binding Name}" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Spacing="8" Margin="8,0,0,0">
+                        <TextBlock Text="SORTIE DE TEST" Classes="section-label" />
+                        <Grid ColumnDefinitions="Auto,*">
+                            <ToggleButton Grid.Column="0"
+                                          Name="SecondaryOutputToggle"
+                                          Classes="output-toggle"
+                                          Content="Off"
+                                          Margin="0,0,8,0" />
+                            <ComboBox Grid.Column="1"
+                                      Name="SecondaryDeviceComboBox"
+                                      x:DataType="audio:AudioDeviceInfo"
+                                      DisplayMemberBinding="{Binding Name}"
+                                      IsEnabled="False" />
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Zone 2 : sons disponibles, avec volume par son -->
+            <Border Classes="panel">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+                        <TextBlock Text="SONS DISPONIBLES" Classes="section-label" Margin="0" VerticalAlignment="Center" />
+                        <CheckBox DockPanel.Dock="Right"
+                                  Name="SelectAllCheckBox"
+                                  Content="Tout sélectionner"
+                                  FontSize="12"
+                                  HorizontalAlignment="Right" />
+                    </DockPanel>
+
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,12,0,0">
+                        <Button Name="AddSoundButton" Content="+ Ajouter un son" Classes="primary" />
+                        <Button Name="RemoveSoundButton" Content="Supprimer" Classes="secondary" IsEnabled="False" />
+                        <Button Name="StopAllButton" Content="Tout arrêter" Classes="secondary" />
+                    </StackPanel>
+
+                    <ListBox Name="SoundsListBox" x:DataType="models:SoundEntry" MaxHeight="360">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:SoundEntry">
+                                <!-- Ligne 1 : case à cocher (sélection multiple) + nom (avec
+                                     bascule d'édition inline) + bouton renommer.
+                                     Ligne 2 : slider + % + bouton lecture, chacun dans sa
+                                     propre colonne pour éviter tout chevauchement. -->
+                                <Grid RowDefinitions="Auto,Auto" Margin="0,4">
+                                    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+                                        <CheckBox Grid.Column="0"
+                                                  Tag="{Binding}"
+                                                  Loaded="OnSoundCheckBoxLoaded"
+                                                  IsCheckedChanged="OnSoundCheckBoxCheckedChanged"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,8,0" />
+
+                                        <Grid Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       Foreground="#E4E6ED"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBox Text="{Binding DisplayName, Mode=OneTime}"
+                                                     Tag="{Binding}"
+                                                     IsVisible="False"
+                                                     KeyDown="OnRenameTextBoxKeyDown"
+                                                     LostFocus="OnRenameTextBoxLostFocus" />
+                                        </Grid>
+
+                                        <Button Grid.Column="2" Content="✎" Classes="rename" Tag="{Binding}"
+                                                Click="OnRenameClicked" Margin="8,0,0,0"
+                                                ToolTip.Tip="Renommer" />
+                                    </Grid>
+
+                                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0,6,0,0">
+                                        <Slider Grid.Column="0"
+                                                Minimum="0" Maximum="1"
+                                                Value="{Binding Volume, Mode=OneTime}"
+                                                Tag="{Binding}"
+                                                ValueChanged="OnVolumeChanged"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,10,0" />
+                                        <TextBlock Grid.Column="1"
+                                                   Classes="volume-label"
+                                                   Text="{Binding Volume, Mode=OneTime, StringFormat={}{0:P0}}"
+                                                   Foreground="#7B8194"
+                                                   Width="42"
+                                                   VerticalAlignment="Center" />
+                                        <Button Grid.Column="2" Content="▶" Classes="play" Tag="{Binding}"
+                                                Click="OnPlaySoundClicked" Margin="8,0,0,0" />
+                                    </Grid>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+        </StackPanel>
+
+    </DockPanel>
+
+</Window>

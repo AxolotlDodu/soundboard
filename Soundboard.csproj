@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>Assets\Soundboard.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.1.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.1.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.3" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.3" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.1.3" Condition="'$(Configuration)' == 'Debug'" />
+
+    <!-- Moteur audio -->
+    <PackageReference Include="ManagedBass" Version="3.1.1" />
+
+    <!-- Épinglage explicite : dépendance transitive (Avalonia.X11/FreeDesktop) qui
+        remontait en 0.16.0, vulnérable (CVE-2026-39959 / GHSA-xrw6-gwf8-vvr9). -->
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Permet d'utiliser les types ASP.NET Core (WebApplication, Minimal API...)
+         sans passer par le SDK Web, pour rester une appli desktop Avalonia. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- bass.dll (natif) doit être téléchargé manuellement sur un4seen.com
+         et placé à la racine du projet, à côté de Soundboard.csproj -->
+    <None Include="bass.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('bass.dll')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\Soundboard.ico" />
+  </ItemGroup>
+
+</Project>
