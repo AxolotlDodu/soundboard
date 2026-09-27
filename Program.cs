@@ -21,8 +21,36 @@ internal static class Program
         try
         {
             Console.WriteLine("[1/4] Initialisation du moteur audio...");
+            var settings = SettingsRepository.Load();
             var audioEngine = new AudioEngine();
-            audioEngine.Initialize();
+
+            // Résout les noms de devices persistés en index Bass actuels. S'ils
+            // ne sont plus branchés, on retombe sur le device par défaut pour la
+            // sortie principale, et sur la sortie de test désactivée (l'UI vide
+            // alors la sélection au lieu de deviner un remplaçant).
+            var availableDevices = audioEngine.GetAvailableDevices();
+            int? preferredPrimaryIndex = settings.PrimaryDeviceName is null
+                ? null
+                : availableDevices.FirstOrDefault(d => d.Name == settings.PrimaryDeviceName)?.Index;
+
+            audioEngine.Initialize(preferredPrimaryIndex);
+            audioEngine.SetMasterVolume(settings.MasterVolume);
+
+            if (settings.SecondaryDeviceName is not null)
+            {
+                var secondaryDevice = availableDevices.FirstOrDefault(d => d.Name == settings.SecondaryDeviceName);
+
+                if (secondaryDevice is not null)
+                {
+                    audioEngine.SetSecondaryDevice(secondaryDevice.Index);
+
+                    if (settings.SecondaryOutputEnabled)
+                    {
+                        audioEngine.SetSecondaryOutputEnabled(true);
+                    }
+                }
+            }
+
             Console.WriteLine("[1/4] OK");
 
             // 2. Bibliothèque de sons, chargée depuis sounds.json (liste vide au
@@ -56,6 +84,7 @@ internal static class Program
             // 4. Lance l'UI Avalonia. Bloquant jusqu'à fermeture de la fenêtre.
             App.AudioEngine = audioEngine;
             App.SoundLibrary = library;
+            App.Settings = settings;
 
             Console.WriteLine("[3/4] Lancement de l'UI Avalonia...");
             try

@@ -7,11 +7,10 @@ bin/
 obj/
 *.user
 .vs/
+.vscode/
 **/publish/
 
-# Build .NET
-host-app/MacroPad.Host/bin/
-host-app/MacroPad.Host/obj/
+
 
 # Secrets (jamais commités)
 **/secrets.json

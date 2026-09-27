@@ -5,7 +5,8 @@
         x:Class="Soundboard.Views.MainWindow"
         Title="Soundboard"
         Icon="/Assets/Soundboard.ico"
-        Width="640" Height="680"
+        CanResize="False"
+        Width="720" Height="860"
         Background="#12141C">
 
     <Window.Styles>
@@ -94,7 +95,7 @@
             <Setter Property="Background" Value="#EF7996" />
         </Style>
 
-        <!-- Bouton renommer (✎) par ligne, discret -->
+        <!-- Bouton renommer (✎) / trim (✂) par ligne, discrets -->
         <Style Selector="Button.rename">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="#7B8194" />
@@ -127,21 +128,29 @@
             <Setter Property="Foreground" Value="#EAFBF2" />
         </Style>
 
-        <!-- Liste des sons -->
+        <!-- Liste des sons : pas de gap (les séparateurs viennent de la
+             bordure basse posée dans le DataTemplate) et pas d'arrondi, pour
+             des lignes continues. -->
         <Style Selector="ListBox">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
         </Style>
         <Style Selector="ListBoxItem">
             <Setter Property="Padding" Value="10,8" />
-            <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Margin" Value="0" />
         </Style>
         <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#20242F" />
         </Style>
+        <!-- Pas de surbrillance à la sélection (juste utilisée en interne pour
+             le bouton Supprimer) : le fond reste identique à l'état normal,
+             avec ou sans survol. -->
         <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-            <Setter Property="Background" Value="#233052" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#20242F" />
         </Style>
     </Window.Styles>
 
@@ -157,45 +166,74 @@
 
             <!-- Zone 1 : sorties audio, principale et de test, côte à côte -->
             <Border Classes="panel">
-                <Grid ColumnDefinitions="*,*">
-                    <StackPanel Grid.Column="0" Spacing="8" Margin="0,0,8,0">
-                        <TextBlock Text="SORTIE AUDIO" Classes="section-label" />
-                        <Grid ColumnDefinitions="Auto,*">
-                            <ToggleButton Grid.Column="0"
-                                          Name="PrimaryOutputToggle"
-                                          Classes="output-toggle"
-                                          Content="On"
-                                          IsChecked="True"
-                                          Margin="0,0,8,0" />
-                            <ComboBox Grid.Column="1"
-                                      Name="DeviceComboBox"
-                                      x:DataType="audio:AudioDeviceInfo"
-                                      DisplayMemberBinding="{Binding Name}" />
-                        </Grid>
-                    </StackPanel>
+                <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" Spacing="8" Margin="0,0,8,0">
+                            <TextBlock Text="SORTIE AUDIO" Classes="section-label" />
+                            <Grid ColumnDefinitions="Auto,*">
+                                <ToggleButton Grid.Column="0"
+                                              Name="PrimaryOutputToggle"
+                                              Classes="output-toggle"
+                                              Content="On"
+                                              IsChecked="True"
+                                              Margin="0,0,8,0" />
+                                <ComboBox Grid.Column="1"
+                                          Name="DeviceComboBox"
+                                          x:DataType="audio:AudioDeviceInfo"
+                                          DisplayMemberBinding="{Binding Name}" />
+                            </Grid>
+                        </StackPanel>
 
-                    <StackPanel Grid.Column="1" Spacing="8" Margin="8,0,0,0">
-                        <TextBlock Text="SORTIE DE TEST" Classes="section-label" />
-                        <Grid ColumnDefinitions="Auto,*">
-                            <ToggleButton Grid.Column="0"
-                                          Name="SecondaryOutputToggle"
-                                          Classes="output-toggle"
-                                          Content="Off"
-                                          Margin="0,0,8,0" />
-                            <ComboBox Grid.Column="1"
-                                      Name="SecondaryDeviceComboBox"
-                                      x:DataType="audio:AudioDeviceInfo"
-                                      DisplayMemberBinding="{Binding Name}"
-                                      IsEnabled="False" />
-                        </Grid>
-                    </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="8" Margin="8,0,0,0">
+                            <TextBlock Text="SORTIE DE TEST" Classes="section-label" />
+                            <Grid ColumnDefinitions="Auto,*">
+                                <ToggleButton Grid.Column="0"
+                                              Name="SecondaryOutputToggle"
+                                              Classes="output-toggle"
+                                              Content="Off"
+                                              Margin="0,0,8,0" />
+                                <ComboBox Grid.Column="1"
+                                          Name="SecondaryDeviceComboBox"
+                                          x:DataType="audio:AudioDeviceInfo"
+                                          DisplayMemberBinding="{Binding Name}"
+                                          IsEnabled="False" />
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Avertissement (ex. même device choisi pour les deux
+                         sorties) : cette combinaison faisait geler l'appli,
+                         elle est maintenant refusée avec ce message plutôt
+                         que d'accepter silencieusement une sélection invalide. -->
+                    <TextBlock Name="OutputWarningText"
+                               Foreground="#E4557B"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               IsVisible="False" />
+                </StackPanel>
+            </Border>
+
+            <!-- Zone 2 : volume général + arrêt global, dans leur propre
+                 section (plutôt qu'en bas de la liste des sons), pensée pour
+                 rester accessible même quand la liste défile. -->
+            <Border Classes="panel">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                    <TextBlock Grid.Column="0" Text="VOLUME GÉNÉRAL" Classes="section-label"
+                               VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <Slider Grid.Column="1" Name="MasterVolumeSlider" Minimum="0" Maximum="1"
+                            VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Name="MasterVolumeLabel" Text="100 %" Foreground="#7B8194"
+                               FontSize="12" Width="42" VerticalAlignment="Center" Margin="12,0,12,0" />
+                    <Button Grid.Column="3" Name="StopAllButton" Content="Tout arrêter" Classes="secondary" />
                 </Grid>
             </Border>
 
-            <!-- Zone 2 : sons disponibles, avec volume par son -->
+            <!-- Zone 3 : sons disponibles. Ajouter/Supprimer en haut, puis la
+                 liste (scrollable au-delà de MaxHeight), chaque son séparé du
+                 suivant par un simple trait plutôt qu'une surbrillance au clic. -->
             <Border Classes="panel">
                 <DockPanel>
-                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                         <TextBlock Text="SONS DISPONIBLES" Classes="section-label" Margin="0" VerticalAlignment="Center" />
                         <CheckBox DockPanel.Dock="Right"
                                   Name="SelectAllCheckBox"
@@ -204,62 +242,69 @@
                                   HorizontalAlignment="Right" />
                     </DockPanel>
 
-                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,12,0,0">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
                         <Button Name="AddSoundButton" Content="+ Ajouter un son" Classes="primary" />
                         <Button Name="RemoveSoundButton" Content="Supprimer" Classes="secondary" IsEnabled="False" />
-                        <Button Name="StopAllButton" Content="Tout arrêter" Classes="secondary" />
                     </StackPanel>
 
-                    <ListBox Name="SoundsListBox" x:DataType="models:SoundEntry" MaxHeight="360">
+                    <ListBox Name="SoundsListBox" x:DataType="models:SoundEntry" MaxHeight="420"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:SoundEntry">
-                                <!-- Ligne 1 : case à cocher (sélection multiple) + nom (avec
-                                     bascule d'édition inline) + bouton renommer.
-                                     Ligne 2 : slider + % + bouton lecture, chacun dans sa
-                                     propre colonne pour éviter tout chevauchement. -->
-                                <Grid RowDefinitions="Auto,Auto" Margin="0,4">
-                                    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
-                                        <CheckBox Grid.Column="0"
-                                                  Tag="{Binding}"
-                                                  Loaded="OnSoundCheckBoxLoaded"
-                                                  IsCheckedChanged="OnSoundCheckBoxCheckedChanged"
-                                                  VerticalAlignment="Center"
-                                                  Margin="0,0,8,0" />
+                                <!-- Trait de séparation en bas de chaque ligne plutôt
+                                     qu'un fond en surbrillance à la sélection.
+                                     Ligne 1 : case à cocher (sélection multiple) + nom
+                                     (avec bascule d'édition inline) + boutons renommer
+                                     et trim. Ligne 2 : slider + % + bouton lecture. -->
+                                <Border BorderBrush="#2E3244" BorderThickness="0,0,0,1" Padding="0,6">
+                                    <Grid RowDefinitions="Auto,Auto">
+                                        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <CheckBox Grid.Column="0"
+                                                      Tag="{Binding}"
+                                                      Loaded="OnSoundCheckBoxLoaded"
+                                                      IsCheckedChanged="OnSoundCheckBoxCheckedChanged"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,8,0" />
 
-                                        <Grid Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding DisplayName}"
-                                                       Foreground="#E4E6ED"
-                                                       TextTrimming="CharacterEllipsis" />
-                                            <TextBox Text="{Binding DisplayName, Mode=OneTime}"
-                                                     Tag="{Binding}"
-                                                     IsVisible="False"
-                                                     KeyDown="OnRenameTextBoxKeyDown"
-                                                     LostFocus="OnRenameTextBoxLostFocus" />
+                                            <Grid Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding DisplayName}"
+                                                           Foreground="#E4E6ED"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBox Text="{Binding DisplayName, Mode=OneTime}"
+                                                         Tag="{Binding}"
+                                                         IsVisible="False"
+                                                         KeyDown="OnRenameTextBoxKeyDown"
+                                                         LostFocus="OnRenameTextBoxLostFocus" />
+                                            </Grid>
+
+                                            <Button Grid.Column="2" Content="✎" Classes="rename" Tag="{Binding}"
+                                                    Click="OnRenameClicked" Margin="8,0,0,0"
+                                                    ToolTip.Tip="Renommer" />
+
+                                            <Button Grid.Column="3" Content="✂" Classes="rename" Tag="{Binding}"
+                                                    Click="OnTrimClicked" Margin="4,0,0,0"
+                                                    ToolTip.Tip="Ajuster (trim)" />
                                         </Grid>
 
-                                        <Button Grid.Column="2" Content="✎" Classes="rename" Tag="{Binding}"
-                                                Click="OnRenameClicked" Margin="8,0,0,0"
-                                                ToolTip.Tip="Renommer" />
+                                        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0,6,0,0">
+                                            <Slider Grid.Column="0"
+                                                    Minimum="0" Maximum="1"
+                                                    Value="{Binding Volume, Mode=OneTime}"
+                                                    Tag="{Binding}"
+                                                    ValueChanged="OnVolumeChanged"
+                                                    VerticalAlignment="Center"
+                                                    Margin="0,0,10,0" />
+                                            <TextBlock Grid.Column="1"
+                                                       Classes="volume-label"
+                                                       Text="{Binding Volume, Mode=OneTime, StringFormat={}{0:P0}}"
+                                                       Foreground="#7B8194"
+                                                       Width="42"
+                                                       VerticalAlignment="Center" />
+                                            <Button Grid.Column="2" Content="▶" Classes="play" Tag="{Binding}"
+                                                    Click="OnPlaySoundClicked" Margin="8,0,0,0" />
+                                        </Grid>
                                     </Grid>
-
-                                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0,6,0,0">
-                                        <Slider Grid.Column="0"
-                                                Minimum="0" Maximum="1"
-                                                Value="{Binding Volume, Mode=OneTime}"
-                                                Tag="{Binding}"
-                                                ValueChanged="OnVolumeChanged"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,10,0" />
-                                        <TextBlock Grid.Column="1"
-                                                   Classes="volume-label"
-                                                   Text="{Binding Volume, Mode=OneTime, StringFormat={}{0:P0}}"
-                                                   Foreground="#7B8194"
-                                                   Width="42"
-                                                   VerticalAlignment="Center" />
-                                        <Button Grid.Column="2" Content="▶" Classes="play" Tag="{Binding}"
-                                                Click="OnPlaySoundClicked" Margin="8,0,0,0" />
-                                    </Grid>
-                                </Grid>
+                                </Border>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>

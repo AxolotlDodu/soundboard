@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Soundboard.Api;
 using Soundboard.Audio;
+using Soundboard.Config;
 using Soundboard.Views;
 
 namespace Soundboard;
@@ -13,6 +14,7 @@ public class App : Application
     // Renseigné par Program.cs avant le démarrage du lifetime desktop.
     public static AudioEngine? AudioEngine { get; set; }
     public static SoundLibrary? SoundLibrary { get; set; }
+    public static AppSettings? Settings { get; set; }
 
     private MainWindow? _mainWindow;
 
@@ -31,7 +33,7 @@ public class App : Application
             // tray termine réellement le process.
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-            _mainWindow = new MainWindow(AudioEngine, SoundLibrary);
+            _mainWindow = new MainWindow(AudioEngine, SoundLibrary, Settings);
             _mainWindow.Closing += OnMainWindowClosing;
 
             desktop.MainWindow = _mainWindow;

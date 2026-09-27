@@ -25,7 +25,7 @@ public static class ApiEndpoints
 
             try
             {
-                engine.PlaySound(sound.Id, sound.FilePath, sound.Volume);
+                engine.PlaySound(sound.Id, sound.FilePath, sound.Volume, sound.TrimStartSeconds, sound.TrimEndSeconds);
                 return Results.Ok(new { played = sound.Id });
             }
             catch (Exception ex)
@@ -46,6 +46,26 @@ public static class ApiEndpoints
         {
             engine.StopAll();
             return Results.Ok(new { stopped = "all" });
+        });
+
+        // GET /volume - volume général actuel (0.0 à 1.0)
+        app.MapGet("/volume", () => Results.Ok(new { volume = engine.MasterVolume }));
+
+        // POST /volume/{percent} - fixe le volume général en absolu (0 à 100)
+        app.MapPost("/volume/{percent:int}", (int percent) =>
+        {
+            engine.SetMasterVolume(Math.Clamp(percent, 0, 100) / 100.0);
+            return Results.Ok(new { volume = engine.MasterVolume });
+        });
+
+        // POST /volume/adjust/{deltaPercent} - ajuste le volume général de
+        // deltaPercent points (négatif pour baisser) ; endpoint pensé pour un
+        // encodeur rotatif, qui envoie un delta par cran plutôt qu'une valeur
+        // absolue.
+        app.MapPost("/volume/adjust/{deltaPercent:int}", (int deltaPercent) =>
+        {
+            engine.SetMasterVolume(engine.MasterVolume + deltaPercent / 100.0);
+            return Results.Ok(new { volume = engine.MasterVolume });
         });
 
         // GET /sounds - liste des sons disponibles (utile pour un futur mapping type Stream Deck)

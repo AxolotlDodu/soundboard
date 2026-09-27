@@ -23,8 +23,29 @@ public static class AppPaths
     /// </summary>
     public static string SoundsConfigFile => Path.Combine(RootFolder, "sounds.json");
 
+    /// <summary>
+    /// Fichier JSON des préférences persistées : volume général et sorties
+    /// audio sélectionnées (voir AppSettings).
+    /// </summary>
+    public static string SettingsFile => Path.Combine(RootFolder, "settings.json");
+
+    /// <summary>
+    /// Dossier dans lequel sont stockées les copies des fichiers audio
+    /// importés (voir SoundLibrary.AddFromFile) ainsi que les extraits (trim)
+    /// exportés comme nouveau son, au format .wav (voir
+    /// AudioEngine.ExportTrimmedFile). Situé au même endroit que sounds.json
+    /// et settings.json plutôt que de dépendre d'emplacements choisis par
+    /// l'utilisateur dans l'explorateur, qui peuvent être déplacés/supprimés.
+    /// </summary>
+    public static string SoundsFolder => Path.Combine(RootFolder, "Sounds");
+
     public static void EnsureRootFolderExists()
     {
         Directory.CreateDirectory(RootFolder);
+    }
+
+    public static void EnsureSoundsFolderExists()
+    {
+        Directory.CreateDirectory(SoundsFolder);
     }
 }

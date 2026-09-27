@@ -45,19 +45,74 @@ public sealed class SoundLibrary
     }
 
     /// <summary>
-    /// Ajoute un son à partir d'un chemin de fichier. L'id est dérivé du nom
-    /// de fichier (sans extension) ; en cas de collision, un suffixe
-    /// numérique est ajouté pour garder des ids uniques.
+    /// Ajoute un son à partir d'un chemin de fichier choisi par l'utilisateur
+    /// (ex. explorateur de fichiers). Le fichier est copié dans
+    /// AppPaths.SoundsFolder plutôt que référencé à son emplacement d'origine :
+    /// la soundboard reste donc fonctionnelle même si ce fichier source est
+    /// ensuite déplacé, renommé ou supprimé par l'utilisateur. L'id est dérivé
+    /// du nom de fichier (sans extension) ; en cas de collision (id ou nom de
+    /// fichier déjà utilisé), un suffixe numérique est ajouté pour rester unique.
     /// </summary>
     public SoundEntry AddFromFile(string filePath)
     {
         var baseName = Path.GetFileNameWithoutExtension(filePath);
         var displayName = baseName;
 
+        AppPaths.EnsureSoundsFolderExists();
+        var storedPath = BuildUniqueStoredPath(baseName, Path.GetExtension(filePath));
+        File.Copy(filePath, storedPath);
+
         lock (_lock)
         {
             var id = ToUniqueId(baseName);
-            var entry = new SoundEntry(id, displayName, filePath);
+            var entry = new SoundEntry(id, displayName, storedPath);
+            _sounds.Add(entry);
+            SoundsRepository.Save(_sounds);
+            NotifyChanged();
+            return entry;
+        }
+    }
+
+    /// <summary>
+    /// Construit un chemin unique dans AppPaths.SoundsFolder à partir d'un nom
+    /// de base (slugifié : lettres/chiffres/tirets uniquement), en ajoutant un
+    /// suffixe numérique si un fichier du même nom existe déjà.
+    /// </summary>
+    private static string BuildUniqueStoredPath(string baseName, string extension)
+    {
+        var slug = string.Concat(baseName.Trim()
+            .Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '-'));
+
+        if (string.IsNullOrEmpty(slug))
+        {
+            slug = "son";
+        }
+
+        var candidate = Path.Combine(AppPaths.SoundsFolder, slug + extension);
+        var suffix = 1;
+
+        while (File.Exists(candidate))
+        {
+            candidate = Path.Combine(AppPaths.SoundsFolder, $"{slug}-{suffix++}{extension}");
+        }
+
+        return candidate;
+    }
+
+    /// <summary>
+    /// Ajoute un son pointant vers un fichier déjà présent sur disque, avec
+    /// un nom affiché explicite (contrairement à AddFromFile, qui le dérive
+    /// du nom de fichier). Utilisé notamment pour l'extrait exporté depuis la
+    /// fenêtre de découpage (voir AudioEngine.ExportTrimmedFile) : le fichier
+    /// étant déjà le résultat du découpage, TrimStartSeconds/TrimEndSeconds
+    /// restent à leurs valeurs par défaut (0 / null).
+    /// </summary>
+    public SoundEntry AddSound(string filePath, string displayName, double volume = 1.0)
+    {
+        lock (_lock)
+        {
+            var id = ToUniqueId(displayName);
+            var entry = new SoundEntry(id, displayName, filePath, volume);
             _sounds.Add(entry);
             SoundsRepository.Save(_sounds);
             NotifyChanged();
@@ -129,6 +184,66 @@ public sealed class SoundLibrary
 
             _sounds[index] = _sounds[index] with { Volume = volume };
             SoundsRepository.Save(_sounds);
+        }
+    }
+
+    /// <summary>
+    /// Met à jour le découpage (trim) d'un son suite à la fenêtre d'édition
+    /// dédiée. Contrairement à UpdateVolume, déclenche Changed : il n'y a pas
+    /// de drag continu à préserver ici, juste une validation ponctuelle dans
+    /// la fenêtre de trim.
+    /// </summary>
+    public void UpdateTrim(string id, double trimStartSeconds, double? trimEndSeconds)
+    {
+        lock (_lock)
+        {
+            var index = _sounds.FindIndex(s => s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+
+            if (index < 0)
+            {
+                return;
+            }
+
+            _sounds[index] = _sounds[index] with
+            {
+                TrimStartSeconds = trimStartSeconds,
+                TrimEndSeconds = trimEndSeconds,
+            };
+
+            SoundsRepository.Save(_sounds);
+            NotifyChanged();
+        }
+    }
+
+    /// <summary>
+    /// À appeler après AudioEngine.RewriteTrimmedFile : le fichier sur disque
+    /// ne contient désormais plus que l'extrait choisi (le découpage est
+    /// "baked in"), donc TrimStartSeconds/TrimEndSeconds reviennent à leurs
+    /// valeurs par défaut (0 / null), et FilePath est mis à jour puisque la
+    /// réécriture peut avoir changé l'extension (voir RewriteTrimmedFile).
+    /// </summary>
+    public SoundEntry? ApplyBakedTrim(string id, string newFilePath)
+    {
+        lock (_lock)
+        {
+            var index = _sounds.FindIndex(s => s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+
+            if (index < 0)
+            {
+                return null;
+            }
+
+            var updated = _sounds[index] with
+            {
+                FilePath = newFilePath,
+                TrimStartSeconds = 0.0,
+                TrimEndSeconds = null,
+            };
+
+            _sounds[index] = updated;
+            SoundsRepository.Save(_sounds);
+            NotifyChanged();
+            return updated;
         }
     }
 
