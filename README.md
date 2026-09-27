@@ -1,7 +1,7 @@
 # Soundboard
 
 Soundboard de bureau pour Windows (C# / Avalonia), pensée pour être pilotée
-à distance par un [macro pad](../macro-pad) personnalisé via une petite API
+à distance par un [macro pad](https://github.com/AxolotlDodu/macro-pad) personnalisé via une petite API
 HTTP locale.
 
 ## Fonctionnalités
