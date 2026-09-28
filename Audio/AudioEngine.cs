@@ -23,6 +23,9 @@ public sealed class AudioEngine : IDisposable
     private Timer? _watchTimer;
     private bool _disposed;
 
+    /// <summary>Levé quand le volume général change réellement (slider UI ou API/macro pad).</summary>
+    public event Action<double>? MasterVolumeChanged;
+
     // Volume général appliqué en plus du volume propre à chaque son :
     // volume effectif d'un stream = volume du son * volume général.
     // Persisté par l'appelant (voir AppSettings/SettingsRepository) et
@@ -686,7 +689,9 @@ public sealed class AudioEngine : IDisposable
     /// </summary>
     public void SetMasterVolume(double volume)
     {
-        _masterVolume = Math.Clamp(volume, 0.0, 1.0);
+        var clamped = Math.Clamp(volume, 0.0, 1.0);
+        var changed = Math.Abs(clamped - _masterVolume) > 1e-9;
+        _masterVolume = clamped;
 
         List<(string SoundId, int DeviceIndex, int Stream)> streams;
 
@@ -720,6 +725,10 @@ public sealed class AudioEngine : IDisposable
                     Bass.CurrentDevice = previousDevice;
                 }
             }
+        }
+        if (changed)
+        {
+            MasterVolumeChanged?.Invoke(_masterVolume);
         }
     }
 

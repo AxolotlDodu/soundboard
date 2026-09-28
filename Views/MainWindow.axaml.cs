@@ -113,6 +113,11 @@ public partial class MainWindow : Window
             MasterVolumeLabel.Text = $"{e.NewValue:P0}";
             SaveSettings(masterVolume: e.NewValue);
         };
+        _audioEngine.MasterVolumeChanged += volume => Dispatcher.UIThread.Post(() =>
+        {
+            // Le ValueChanged du slider se charge du reste (moteur, libellé, sauvegarde).
+            MasterVolumeSlider.Value = volume;
+        });
     }
 
     private void SetupPlaybackTracking()
